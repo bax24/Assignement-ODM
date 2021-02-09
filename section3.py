@@ -58,8 +58,57 @@ def Q_function(state, action, gamma, N, stocha, grid, matrix):
 	m = r + gamma * np.sum(sum_)
 	matrix[N-1][state[0]][state[1]][ac] = m
 	return m
+
+
+def compute_policy(gamma, N, stocha, grid):
+	dyn_matrix = np.full((N,domain.shape[0],domain.shape[1],4),np.inf)
+	
+	policies = []
+	
+	for i in range(domain.shape[0]):
+		policies_i = []
+		for j in range(domain.shape[1]):
+			Q_max = -1*np.inf
+			action = (2, 2)
+			for a in actions:
+				Q_value = Q_function((i, j), a, gamma, N, stocha, domain, dyn_matrix)
+				
+				if Q_value > Q_max:
+					Q_max = Q_value
+					action = a
 			
+			policies_i.append(action)
+		policies.append(policies_i)
+		
+	return policies
+
+
+def expected_return(state,grid,gamma,N,stocha,matrix,policy):
+	
+	if N == 0:
+		return 0
+	
+	m = matrix[N-1][state[0]][state[1]]
+	if not m == np.inf: # value of J already evaluated
+		return m
+	
+	step = f.move(state, policy[state[0]][state[1]], grid)
+	rew = f.get_reward(grid, step[3])
+	
+	if not stocha:
+		m = rew + gamma*expected_return(step[3],grid,gamma,N-1,stocha,matrix,policy)
+		matrix[N-1][state[0]][state[1]] = m
+		return m
+	else:
+		exp_rew = (-3 + rew)/2
+		exp_ret_no_disturb = expected_return(step[3],grid,gamma,N-1,stocha,matrix,policy)
+		exp_ret_disturb = expected_return((0, 0),grid,gamma,N-1,stocha,matrix,policy)
+		
+		m = exp_rew + gamma*(exp_ret_no_disturb + exp_ret_disturb)/2
+		matrix[N-1][state[0]][state[1]] = m
+		return  m
 			
+
 # ---------- MAIN --------------
 if __name__ == "__main__":
 	
@@ -80,30 +129,23 @@ if __name__ == "__main__":
 	gamma = 0.99
 	
 	# Number of steps
-	N = 916 # above that gamma**N < 0.0001
+	N = 7
 	
 	# Deterministic: stocha = False; Stochastic: stocha = True
 	stocha = True
 	
-	dyn_matrix = np.full((N,domain.shape[0],domain.shape[1],4),np.inf)
+	# mu* the optimal policy
+	opt_policy = compute_policy(gamma, N, stocha, domain)
 	
-	#Q = Q_function(init, (-1,0), gamma, N, stocha, domain,dyn_matrix)
+	dyn_matrix = np.full((916,domain.shape[0],domain.shape[1]),np.inf)
 	
-	policies = []
+	# J_N^{mu*} for every state
+	J_values = np.zeros((5,5))
+	for i in range(5):
+		for j in range(5):
+ 			state = (i, j)
+ 			
+ 			J_values[i,j] = expected_return(state,domain,gamma,916,stocha,dyn_matrix,opt_policy)
+			 
+	print(J_values)		
 	
-	for i in range(domain.shape[0]):
-		policies_i = []
-		for j in range(domain.shape[1]):
-			Q_max = -1*np.inf
-			action = (2, 2)
-			for a in actions:
-				Q_value = Q_function((i, j), a, gamma, N, stocha, domain, dyn_matrix)
-				
-				if Q_value > Q_max:
-					Q_max = Q_value
-					action = a
-			
-			policies_i.append(action)
-		policies.append(policies_i)
-				
-			
