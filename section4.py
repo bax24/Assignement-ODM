@@ -1,33 +1,7 @@
-import numoy as np
+import numpy as np
 import math
-
-# Gets reward of a certain state on the grid
-def get_reward(grid, state):
-    r = grid[state[0], state[1]]
-    return r
-
-# Apply action to a state on a grid (determinisitc or stochastic)
-def move(state, action, grid):
-    n = grid.shape[0]
-    m = grid.shape[1]
-    new_state = state
-
-    if(action=='down'):
-        new_state = (min(state[0] + 1, n-1), state[1])
-        action = (1, 0)
-    if(action=='up'):
-        new_state = (max(state[0] - 1, 0), state[1])
-        action = (-1, 0)
-    if(action=='right'):
-        new_state = (state[0], min(state[1] + 1, m-1))
-        action = (0, 1)
-    if(action=='left'):
-        new_state = (state[0], max(state[1] - 1, 0))
-        action = (0, -1)
-		
-    reward = get_reward(grid, new_state)
-        
-    return state, action, reward, new_state
+import functions as f
+import matplotlib.pyplot as plt
 
 
 # Returns a random action
@@ -41,6 +15,75 @@ def get_policy(p):
         i = 3
     
     return actions[i]
+
+def reward_function(state, action, stocha, grid):
+	if stocha:
+		return (f.get_reward(grid, (0,0)) + f.get_reward(grid, f.move(state, action, grid)[3]))/2
+	else:
+		return f.get_reward(grid, f.move(state, action, grid)[3])
+    
+
+
+# Display the trajectory using tuples
+def trajectory(grid, init, stocha, t):
+    state = init
+    random_policy = True # random movement (if false then 'always right')
+    traj = []
+    for i in range(t):
+        next_action = f.get_policy(random_policy)
+        step = f.move(state, next_action, grid)
+        
+        if (stocha and np.random.uniform(0,1) > 0.5):
+            step = (step[0], step[1], f.get_reward(grid, (0, 0)), (0,0))
+        
+        state = step[3]
+        #print(step)
+        traj.append(step)
+    return traj
+
+
+# ---------- MAIN --------------
+if __name__ == "__main__":
+	
+	# Grid
+    domain = np.matrix([[ -3,   1,  -5,   0,  19],
+					 [  6,   3,   8,   9,  10],
+					 [  5,  -8,   4,   1,  -8],
+					 [  6,  -9,   4,  19,  -5],
+					 [-20, -17,  -4,  -3,   9]])
+	
+	# Initial state
+    init  = (3, 0)
+    
+    # Discount factor
+    gamma = 0.99
+    	
+    # Lengths of the trajectories
+    N = [10, 100, 1000, 10000, 1000000] 
+    	
+    # Deterministic: stocha = False; Stochastic: stocha = True
+    stocha = True
+    
+    # Estimation of reward
+    r_hat = []
+    p_hat = []
+    for i in range(1, 10000, 100):
+        ht = trajectory(domain, init, stocha, i)
+        rew = []
+        prob = []
+        for j in range(i):
+            r = ht[j][2]
+            rew.append(r)
+            if f.move(ht[j][0], ht[j][1], domain)[3] == ht[j][3]:
+                prob.append(1)
+        r_hat.append(np.mean(rew))
+        p_hat.append(len(prob)/i)
+        
+    r = plt.plot(range(1, 10000, 100), r_hat, label = 'r')
+    p = plt.plot(range(1, 10000, 100), p_hat, label = 'p')
+    plt.legend(handles=[r, p], loc = 'lower right')
+    plt.show()
+    
 
 
 
