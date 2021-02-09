@@ -8,11 +8,8 @@ def get_reward(grid, state):
 
 # Apply action to a state on a grid (determinisitc or stochastic)
 def move(state, action, grid):
-    n = grid.shape[0]
-    m = grid.shape[1]
-    i, j = action[0], action[1]
-    new_state = state
-    
+    n, m = grid.shape[0], grid.shape[1]
+    i, j = action[0], action[1]    
     new_state = (min(max(state[0] + i, 0), n-1), min(max(state[1] + j, 0), m-1))
 		
     reward = get_reward(grid, new_state)
@@ -20,10 +17,10 @@ def move(state, action, grid):
     return state, action, reward, new_state
 
 # Returns a random action
-def get_policy(p):
-    actions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+def get_policy(random):
+    actions = [(1, 0), (-1, 0), (0, -1), (0, 1)]
 	
-    if p == 1: # random 
+    if random: # random 
         num = np.random.uniform(0, 4)
         i = math.floor(num)
     else: # always right
