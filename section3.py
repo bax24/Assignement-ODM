@@ -70,6 +70,9 @@ if __name__ == "__main__":
 					 [  6,  -9,   4,  19,  -5],
 					 [-20, -17,  -4,  -3,   9]])
 	
+	# Set of actions U
+	actions = [(1, 0), (-1, 0), (0, -1), (0, 1)]
+	
 	# Initial state
 	init  = (3, 0)
 	
@@ -77,13 +80,30 @@ if __name__ == "__main__":
 	gamma = 0.99
 	
 	# Number of steps
-	#N = 916 # above that gamma**N < 0.0001 
-	#N = 687 # above that gamma**N < 0.001 
-	N = 458 # above that gamma**N < 0.01 
+	N = 916 # above that gamma**N < 0.0001
 	
 	# Deterministic: stocha = False; Stochastic: stocha = True
 	stocha = True
 	
 	dyn_matrix = np.full((N,domain.shape[0],domain.shape[1],4),np.inf)
 	
-	Q = Q_function(init, (-1,0), gamma, N, stocha, domain,dyn_matrix)
+	#Q = Q_function(init, (-1,0), gamma, N, stocha, domain,dyn_matrix)
+	
+	policies = []
+	
+	for i in range(domain.shape[0]):
+		policies_i = []
+		for j in range(domain.shape[1]):
+			Q_max = -1*np.inf
+			action = (2, 2)
+			for a in actions:
+				Q_value = Q_function((i, j), a, gamma, N, stocha, domain, dyn_matrix)
+				
+				if Q_value > Q_max:
+					Q_max = Q_value
+					action = a
+			
+			policies_i.append(action)
+		policies.append(policies_i)
+				
+			
