@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 def convergence_plot(stocha):
 	# Lengths of the trajectories
-	N = [50, 100, 500, 1000, 5000, 10000]
+	N = [50,100,500,1000,10000,50000,100000,2000000]
 	
 	conv_r = np.zeros((len(N)))
 	conv_p = np.zeros((len(N)))
@@ -99,11 +99,23 @@ if __name__ == "__main__":
 	# Number of steps
 	N = 7
 	
-	#[50,100,500,1000,10000,50000,100000,2000000]
+	# Trajectory of wanted size
+	ht = f.trajectory(domain, init, stocha, 1000)
 	
-	ht = f.trajectory(domain, init, stocha, 2000000)
+	# || Q - Q^ ||_inf for the given trajectory
+	inf_norm_Q = f.inf_norm_Q(N,gamma,stocha,ht,domain)
 	
-	#inf_norm_Q = f.inf_norm_Q(N,gamma,stocha,ht,domain)q
+	# mu^* the optimal policy
+	opt_policy_hat = f.compute_policy_hat(ht, gamma, N, domain)
 	
-	# mu* the optimal policy
-	opt_policy_hat = f.compute_policy_hat(ht, gamma, N, stocha, domain)
+	dyn_matrix = np.full((916,domain.shape[0],domain.shape[1]),np.inf)
+	
+	# J^N_{mu^*} for every state
+	J_values = np.zeros((5,5))
+	for i in range(5):
+		for j in range(5):
+ 			state = (i, j)
+ 			
+ 			J_values[i,j] = f.expected_return(state,domain,gamma,916,stocha,dyn_matrix,opt_policy_hat)
+			 
+	print(J_values)		

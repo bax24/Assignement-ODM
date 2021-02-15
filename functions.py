@@ -197,8 +197,8 @@ def Q_function(state, action, gamma, N, stocha, grid, matrix):
 	:type grid: matrix of int32
 	:param matrix: matrix containing the value of the potential already computed values of Q
 	:type matrix: matrix of size N x grid.shape[0] x grid.shape[1] x #actions
-	:return: DESCRIPTION
-	:rtype: TYPE
+	:return: returns the evaluation of Q_N(state,action)
+	:rtype: float
 	"""
 	
 	if N == 0:
@@ -242,6 +242,13 @@ def Q_function(state, action, gamma, N, stocha, grid, matrix):
 
 
 def compute_r_p_values(grid,stocha):
+	"""
+	:param grid: domain instance
+	:type grid: matrix of int32
+	:param stocha: tells whether or not the domain is stochastic
+	:type stocha: bool
+	:return: returns all values of r(u,x) and p(x'|x,u) according to the grid
+	"""
 	
 	actions = [(1, 0), (-1, 0), (0, -1), (0, 1)]
 
@@ -309,6 +316,16 @@ def compute_policy(gamma, N, stocha, grid):
 # ----------------------------------------------------------------------
 
 def reward_hat(state, action, traj):
+	"""
+	:param state: one state of the domain
+	:type state: 2-tuple
+	:param action: action to be executed from the 'state'
+	:type action: 2-tuple
+	:param traj: trajectory with random uniform policy
+	:type traj: list of lists
+	:return: returns r^(state, action) according to the given trajectory
+	:rtype: float
+	"""
 	rew = []
 	r_hat = 0
 	for j in range(len(traj)):
@@ -321,6 +338,18 @@ def reward_hat(state, action, traj):
 
 	
 def probability_hat(next_state, curr_state, action, traj):
+	"""
+	:param next_state: one state of the domain
+	:type next_state: 2-tuple
+	:param curr_state: one state of the domain
+	:type curr_state: 2-tuple
+	:param action: action to be executed from the 'state'
+	:type action: 2-tuple
+	:param traj: trajectory with random uniform policy
+	:type traj: list of lists
+	:return: returns p^(next_state | curr_state, action) according to the given trajectory
+	:rtype: float
+	"""
 	prob = []
 	p_hat = 0
 	for j in range(len(traj)):
@@ -335,7 +364,7 @@ def probability_hat(next_state, curr_state, action, traj):
 	return p_hat
 
 
-def Q_function_hat(state, action, gamma, N, stocha, r_values, p_values, grid, matrix):
+def Q_function_hat(state, action, gamma, N, r_values, p_values, grid, matrix):
 	"""
 	:param state: one state of the domain
 	:type state: 2-tuple
@@ -345,14 +374,14 @@ def Q_function_hat(state, action, gamma, N, stocha, r_values, p_values, grid, ma
 	:type gamma: float
 	:param N: number of steps in the recursion function J
 	:type N: int
-	:param stocha: tells whether or not the domain is stochastic
-	:type stocha: bool
+	:param r_values: all values of r^(u,x)
+	:param p_values: all values of p^(x'|x,u)
 	:param grid: domain instance
 	:type grid: matrix of int32
 	:param matrix: matrix containing the value of the potential already computed values of Q
 	:type matrix: matrix of size N x grid.shape[0] x grid.shape[1] x #actions
-	:return: DESCRIPTION
-	:rtype: TYPE
+	:return: returns the evaluation of Q^_N(state,action)
+	:rtype: float
 	"""
 	
 	if N == 0:
@@ -388,7 +417,7 @@ def Q_function_hat(state, action, gamma, N, stocha, r_values, p_values, grid, ma
 				Qs = np.zeros(len(actions))
 				k = 0
 				for a in actions:
-					Qs[k] = Q_function_hat(x_prime, a, gamma, N-1, stocha, r_values, p_values, grid, matrix)
+					Qs[k] = Q_function_hat(x_prime, a, gamma, N-1, r_values, p_values, grid, matrix)
 					k = k + 1
 				sum_[i] = p * np.max(Qs)
 				
@@ -397,7 +426,15 @@ def Q_function_hat(state, action, gamma, N, stocha, r_values, p_values, grid, ma
 	return m
 
 
-def compute_r_hat_p_hat_values(ht,grid,stocha):
+def compute_r_hat_p_hat_values(ht,grid):
+	"""
+	:param ht: trajectory with random uniform policy
+	:type ht: list of lists
+	:param grid: domain instance
+	:type grid: matrix of int32
+	:return: return all values of r^(u,x) and p^(x'|x,u) according to
+			 the grid and the trajectory ht
+	"""
 	
 	actions = [(1, 0), (-1, 0), (0, -1), (0, 1)]
 
@@ -423,14 +460,14 @@ def compute_r_hat_p_hat_values(ht,grid,stocha):
 	return r_hat_values,p_hat_values
 
 
-def compute_policy_hat(ht,gamma, N, stocha, grid):
+def compute_policy_hat(ht,gamma, N, grid):
 	"""
+	:param ht: trajectory with random uniform policy
+	:type ht: list of lists
 	:param gamma: value of the decay factor
 	:type gamma: float
 	:param N: number of steps in the recursion function Q
 	:type N: int
-	:param stocha: tells whether or not the domain is stochastic
-	:type stocha: bool
 	:param grid: domain instance
 	:type grid: matrix of int32
 	:return: returns the matrix of actions to take for each corresponding state int 'grid'
@@ -440,7 +477,7 @@ def compute_policy_hat(ht,gamma, N, stocha, grid):
 	
 	dyn_matrix = np.full((N,grid.shape[0],grid.shape[1],4),np.inf)
 	
-	r_values, p_values = compute_r_hat_p_hat_values(ht,grid,stocha)
+	r_values, p_values = compute_r_hat_p_hat_values(ht,grid)
 	
 	policies = []
 	
@@ -450,7 +487,7 @@ def compute_policy_hat(ht,gamma, N, stocha, grid):
 			Q_max = -1*np.inf
 			action = (2, 2)
 			for a in actions:
-				Q_value = Q_function_hat((i, j), a, gamma, N, stocha, r_values, p_values, grid, dyn_matrix)
+				Q_value = Q_function_hat((i, j), a, gamma, N, r_values, p_values, grid, dyn_matrix)
 				
 				if Q_value > Q_max:
 					Q_max = Q_value
@@ -466,6 +503,20 @@ def compute_policy_hat(ht,gamma, N, stocha, grid):
 # ------------------------------------------------------------------
 
 def inf_norm_Q(N,gamma,stocha,ht,grid):
+	"""
+	:param N: number of steps in the recursion function Q
+	:type N: int
+	:param gamma: value of the decay factor
+	:type gamma: float
+	:param stocha: tells whether or not the domain is stochastic
+	:type stocha: bool
+	:param ht: trajectory with random uniform policy
+	:type ht: list of lists
+	:param grid: domain instance
+	:type grid: matrix of int32
+	:return: returns the value of the infinite norm ||Q - Q^||_inf
+	:rtype: float
+	"""
 	
 	actions = [(1, 0), (-1, 0), (0, -1), (0, 1)]
 	
@@ -475,7 +526,7 @@ def inf_norm_Q(N,gamma,stocha,ht,grid):
 	Q_values = np.zeros((grid.size,len(actions)))
 	Q_hat_values = np.zeros((grid.size,len(actions)))
 	
-	r_values, p_values = compute_r_hat_p_hat_values(ht,grid,stocha)		
+	r_values, p_values = compute_r_hat_p_hat_values(ht,grid)		
 	
 	for i in range(grid.size):
 		x = math.floor(i/5)
@@ -485,7 +536,7 @@ def inf_norm_Q(N,gamma,stocha,ht,grid):
 		for a in range(len(actions)):
 			
 			Q_values[i][a] = Q_function(state, actions[a], gamma, N, stocha, grid, dyn_matrix)
-			Q_hat_values[i][a] = Q_function_hat(state, actions[a], gamma, N, stocha, r_values, p_values, grid, dyn_matrix_hat)
+			Q_hat_values[i][a] = Q_function_hat(state, actions[a], gamma, N, r_values, p_values, grid, dyn_matrix_hat)
 			
 			diff_Q = abs(Q_values - Q_hat_values)
 			
