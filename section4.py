@@ -1,89 +1,109 @@
 import numpy as np
-import math
 import functions as f
 import matplotlib.pyplot as plt
 
 
-# Returns a random action
-def get_policy(p):
-    actions = ['down', 'up', 'left', 'right']
+def convergence_plot(stocha):
+	# Lengths of the trajectories
+	N = [50, 100, 500, 1000, 5000, 10000]
 	
-    if p == 1: # random 
-        num = np.random.uniform(0, 4)
-        i = math.floor(num)
-    else: # always right
-        i = 3
-    
-    return actions[i]
-
-def reward_function(state, action, stocha, grid):
-	if stocha:
-		return (f.get_reward(grid, (0,0)) + f.get_reward(grid, f.move(state, action, grid)[3]))/2
-	else:
-		return f.get_reward(grid, f.move(state, action, grid)[3])
-    
-
-
-# Display the trajectory using tuples
-def trajectory(grid, init, stocha, t):
-    state = init
-    random_policy = True # random movement (if false then 'always right')
-    traj = []
-    for i in range(t):
-        next_action = f.get_policy(random_policy)
-        step = f.move(state, next_action, grid)
-        
-        if (stocha and np.random.uniform(0,1) > 0.5):
-            step = (step[0], step[1], f.get_reward(grid, (0, 0)), (0,0))
-        
-        state = step[3]
-        #print(step)
-        traj.append(step)
-    return traj
-
+	conv_r = np.zeros((len(N)))
+	conv_p = np.zeros((len(N)))
+	
+	for i in range(len(N)):
+		ht = f.trajectory(domain, init, stocha, N[i]) # trajectory of size N[i]
+		
+		r_hat_values, p_hat_values = f.compute_r_hat_p_hat_values(ht,domain,stocha)	
+		r_values, p_values = f.compute_r_p_values(domain,stocha)
+		
+		diff_r = abs(r_values - r_hat_values)
+		diff_p = abs(p_values - p_hat_values)
+		
+		conv_r[i] = diff_r.max()
+		conv_p[i] = diff_p.max()
+		
+		
+	# ------- ||r - r^||_inf ---------
+	fig,(ax,ax2) = plt.subplots(1, 2, sharey=True)
+	
+	# plot the same data on both axes
+	ax.plot(N, conv_r, marker = 'o')
+	ax2.plot(N, conv_r, marker = 'o', label = '||r - r^||_inf')
+	
+	# zoom-in / limit the view to different portions of the data
+	ax.set_xlim(0,11000)
+	ax2.set_xlim(1000000,2200000)
+	
+	# hide the spines between ax and ax2
+	ax.spines['right'].set_visible(False)
+	ax2.spines['left'].set_visible(False)
+	ax.yaxis.tick_left()
+	ax2.yaxis.tick_right()
+	
+	# Make the spacing between the two axes a bit smaller
+	plt.subplots_adjust(wspace=0.15)
+	legend = ax2.legend()
+	legend.get_frame().set_alpha(0.5)
+	
+	plt.show()
+		
+	# ------- ||p - p^||_inf ---------
+	fig,(ax,ax2) = plt.subplots(1, 2, sharey=True)
+	
+	# plot the same data on both axes
+	ax.plot(N, conv_p, 'r', marker = 'o')
+	ax2.plot(N, conv_p, 'r', marker = 'o', label = '||p - p^||_inf')
+	
+	# zoom-in / limit the view to different portions of the data
+	ax.set_xlim(0,11000)
+	ax2.set_xlim(1000000,2200000)
+	
+	# hide the spines between ax and ax2
+	ax.spines['right'].set_visible(False)
+	ax2.spines['left'].set_visible(False)
+	ax.yaxis.tick_left()
+	ax2.yaxis.tick_right()
+	
+	# Make the spacing between the two axes a bit smaller
+	plt.subplots_adjust(wspace=0.15)
+	legend = ax2.legend()
+	legend.get_frame().set_alpha(0.5)
+	
+	plt.show()
+		
 
 # ---------- MAIN --------------
 if __name__ == "__main__":
 	
 	# Grid
-    domain = np.matrix([[ -3,   1,  -5,   0,  19],
+	domain = np.matrix([[ -3,   1,  -5,   0,  19],
 					 [  6,   3,   8,   9,  10],
 					 [  5,  -8,   4,   1,  -8],
 					 [  6,  -9,   4,  19,  -5],
 					 [-20, -17,  -4,  -3,   9]])
 	
 	# Initial state
-    init  = (3, 0)
-    
-    # Discount factor
-    gamma = 0.99
-    	
-    # Lengths of the trajectories
-    N = [10, 100, 1000, 10000, 1000000] 
-    	
-    # Deterministic: stocha = False; Stochastic: stocha = True
-    stocha = True
-    
-    # Estimation of reward
-    r_hat = []
-    p_hat = []
-    for i in range(1, 10000, 100):
-        ht = trajectory(domain, init, stocha, i)
-        rew = []
-        prob = []
-        for j in range(i):
-            r = ht[j][2]
-            rew.append(r)
-            if f.move(ht[j][0], ht[j][1], domain)[3] == ht[j][3]:
-                prob.append(1)
-        r_hat.append(np.mean(rew))
-        p_hat.append(len(prob)/i)
-        
-    r = plt.plot(range(1, 10000, 100), r_hat, label = 'r')
-    p = plt.plot(range(1, 10000, 100), p_hat, label = 'p')
-    plt.legend(handles=[r, p], loc = 'lower right')
-    plt.show()
-    
-
-
-
+	init  = (3, 0)
+	
+	# Discount factor
+	gamma = 0.99
+	
+	# Deterministic: stocha = False; Stochastic: stocha = True
+	stocha = True
+	
+	conv_plot = False
+	
+	if conv_plot:
+		convergence_plot(stocha)
+	
+	# Number of steps
+	N = 7
+	
+	#[50,100,500,1000,10000,50000,100000,2000000]
+	
+	ht = f.trajectory(domain, init, stocha, 2000000)
+	
+	#inf_norm_Q = f.inf_norm_Q(N,gamma,stocha,ht,domain)q
+	
+	# mu* the optimal policy
+	opt_policy_hat = f.compute_policy_hat(ht, gamma, N, stocha, domain)
