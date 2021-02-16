@@ -46,15 +46,47 @@ def sect5_2():
 			 
 		
 	# First protocol
-	inf_norm_Q_J = np.zeros((100))
+	inf_norm_Q_J_1 = np.zeros((100))
 	Q, Q_max = f.epsilon_greddy_Q_learning(100, 1000, init, domain, alpha, gamma, epsilon)
 	
 	for e in range(100):
-		inf_norm_Q_J[e] = abs(Q_max[e] - J_values).max()
+		inf_norm_Q_J_1[e] = abs(Q_max[e] - J_values).max()
 	
-	plt.plot(range(100),inf_norm_Q_J)
-		
-		 
+	fig = plt.figure(facecolor='w')
+	ax = fig.add_subplot(111,  axisbelow=True)
+	ax.plot(range(100), inf_norm_Q_J_1, 'b', alpha=1, linewidth=0.8)
+	
+	ax.set_xlabel('Episodes')
+	ax.set_ylabel('||Q^ - J^N_{mu*}||_inf')
+	plt.show()
+    
+    # Second protocol
+	inf_norm_Q_J_2 = np.zeros((100))
+	Q, Q_max = f.epsilon_greddy_Q_learning(100, 1000, init, domain, alpha, gamma, epsilon, rate_alpha = 0.8)
+	
+	for e in range(100):
+		inf_norm_Q_J_2[e] = abs(Q_max[e] - J_values).max()
+	
+	fig = plt.figure(facecolor='w')
+	ax = fig.add_subplot(111,  axisbelow=True)
+	ax.plot(range(100), inf_norm_Q_J_2, 'b', alpha=1, linewidth=0.8)
+	
+	ax.set_xlabel('Episodes')
+	ax.set_ylabel('||Q^ - J^N_{mu*}||_inf')
+	plt.show()
+
+    # Third protocol
+	inf_norm_Q_J_3 = np.zeros((100))
+	Q, Q_max = f.epsilon_greddy_Q_learning(100, 1000, init, domain, alpha, gamma, epsilon, protocol = 3)    
+      		
+	fig = plt.figure(facecolor='w')
+	ax = fig.add_subplot(111,  axisbelow=True)
+	ax.plot(range(100), inf_norm_Q_J_3, 'b', alpha=1, linewidth=0.8)
+	
+	ax.set_xlabel('Episodes')
+	ax.set_ylabel('||Q^ - J^N_{mu*}||_inf')
+	plt.show()
+ 
 # ---------- MAIN --------------
 if __name__ == "__main__":
 	
@@ -87,4 +119,3 @@ if __name__ == "__main__":
 	# Section 5.2
 	if True:
 		b = sect5_2()
-		

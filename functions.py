@@ -573,37 +573,65 @@ def Q_learning(ht, alpha, gamma, Q_values, k, T):
 		k = k + 1
 		
 		
-def epsilon_greddy_Q_learning(ep, trans, x_0, grid, alpha, gamma, epsilon, rate_alpha = 1):
-	
-	actions = [(1, 0), (-1, 0), (0, -1), (0, 1)]
-	
-	Q = np.zeros((grid.size,4))
-	Q_max = np.zeros((ep,grid.shape[0],grid.shape[1])) # contains for each episode and each state the maximum Q(x,u)
-	
-	for e in range(ep):
-		state = x_0
-		alpha_t = alpha
-		for t in range(trans):
-			index = state[0]*5 + state[1]
-			
-			ac = get_action_id(Q,state,epsilon)
-			
-			step = move(state, actions[ac], grid)
-			
-			index_next = step[3][0]*5 + step[3][1]
-				
-			Q[index][ac] = (1 - alpha_t)*Q[index][ac] + alpha_t*(step[2] + gamma*Q[index_next].max()) 
-			
-			state = step[3]
-			alpha_t = rate_alpha*alpha_t
-		
-		for i in range(grid.shape[0]):
-			for j in range(grid.shape[1]):
-				Q_max[e][i][j] = Q[i*5 + j].max()
-			
-	return Q, Q_max
+#def epsilon_greddy_Q_learning(ep, trans, x_0, grid, alpha, gamma, epsilon, rate_alpha = 1, protocol):
+#    
+#    actions = [(1, 0), (-1, 0), (0, -1), (0, 1)]
+#    Q = np.zeros((grid.size,4))
+#    Q_max = np.zeros((ep,grid.shape[0],grid.shape[1])) # contains for each episode and each state the maximum Q(x,u)
+#    for e in range(ep):
+#    	state = x_0
+#    	alpha_t = alpha
+#    	for t in range(trans):
+#    		index = state[0]*5 + state[1]
+#    		ac = get_action_id(Q,state,epsilon)
+#    		step = move(state, actions[ac], grid)
+#    		index_next = step[3][0]*5 + step[3][1]
+#    		Q[index][ac] = (1 - alpha_t)*Q[index][ac] + alpha_t*(step[2] + gamma*Q[index_next].max()) 
+#    		state = step[3]
+#    		alpha_t = rate_alpha*alpha_t
+#    		
+#    	for i in range(grid.shape[0]):
+#    		for j in range(grid.shape[1]):
+#    			Q_max[e][i][j] = Q[i*5 + j].max()
+#    			
+#    return Q, Q_max
 
+def epsilon_greddy_Q_learning(ep, trans, x_0, grid, alpha, gamma, epsilon, rate_alpha = 1, protocol = 1):
+    actions = [(1, 0), (-1, 0), (0, -1), (0, 1)]
+    Q = np.zeros((grid.size,4))
+    Q_max = np.zeros((ep,grid.shape[0],grid.shape[1])) # contains for each episode and each state the maximum Q(x,u)
+    if protocol == 3:
+        buffer = []
+    
+    for e in range(ep):
+    	state = x_0
+    	alpha_t = alpha
+    	for t in range(trans):
+            index = state[0]*5 + state[1]
+            ac = get_action_id(Q,state,epsilon)
+            step = move(state, actions[ac], grid)
+            if protocol == 3:
+                buffer.append(step)
+                for i in range(10):
+                    rand = np.random.uniform(0,len(buffer))
+                    rand = math.floor(rand)
+                    step = buffer[rand]
+                    index_next = step[3][0]*5 + step[3][1]
+                    Q[index][ac] = (1 - alpha_t)*Q[index][ac] + alpha_t*(step[2] + gamma*Q[index_next].max())
+                    state = step[3]
+            else:
+                index_next = step[3][0]*5 + step[3][1]
+                Q[index][ac] = (1 - alpha_t)*Q[index][ac] + alpha_t*(step[2] + gamma*Q[index_next].max())
+                state = step[3]
+                alpha_t = rate_alpha*alpha_t
+            
+            for i in range(grid.shape[0]):
+                for j in range(grid.shape[1]):
+                    Q_max[e][i][j] = Q[i*5 + j].max()
+        
+    return Q, Q_max
 
+     
 def get_action_id(Q, state, epsilon):
 	r = np.random.uniform(0,1)
 	
