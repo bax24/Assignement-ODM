@@ -77,7 +77,10 @@ def sect5_2():
 
     # Third protocol
 	inf_norm_Q_J_3 = np.zeros((100))
-	Q, Q_max = f.epsilon_greddy_Q_learning(100, 1000, init, domain, alpha, gamma, epsilon, protocol = 3)    
+	Q, Q_max = f.epsilon_greddy_Q_learning(100, 1000, init, domain, alpha, gamma, epsilon, protocol = 3)
+    
+	for e in range(100):
+		inf_norm_Q_J_3[e] = abs(Q_max[e] - J_values).max()    
       		
 	fig = plt.figure(facecolor='w')
 	ax = fig.add_subplot(111,  axisbelow=True)
@@ -101,7 +104,7 @@ if __name__ == "__main__":
 	init  = (3, 0)
 	
 	# Discount factor
-	gamma = 0.99
+	gamma = 0.4
 	
 	# Deterministic: stocha = False; Stochastic: stocha = True
 	stocha = False
